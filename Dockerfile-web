@@ -13,10 +13,10 @@ FROM python:3.9-slim
 WORKDIR /app
 
 # Copy only the installed packages from the builder stage
-COPY --from=builder /root/.local /root/.local
+COPY --from=builder /root/.local /usr/local
 
-# Make sure scripts in .local are usable
-ENV PATH=/root/.local/bin:$PATH
+# Make sure scripts are usable
+ENV PATH=/usr/local/bin:$PATH
 
 # Copy application code
 COPY app/ .

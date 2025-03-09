@@ -1,11 +1,11 @@
-# Note: No 'version' key as it's no longer required in recent Docker Compose versions
+# Updated docker-compose.yml
 services:
   web:
     build:
       context: .
       dockerfile: Dockerfile-web
     ports:
-      - "80:5000"
+      - "8080:5000"  # Changed from 80:5000 to 8080:5000
     environment:
       - REDIS_HOST=redis
       - REDIS_PORT=6379
