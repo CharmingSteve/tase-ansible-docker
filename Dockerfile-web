@@ -22,9 +22,12 @@ COPY --from=builder /usr/local/bin/flask /usr/local/bin/flask
 # Copy application code
 COPY app/ .
 
+# Install curl for healthcheck
+RUN apt-get update && apt-get install -y curl && rm -rf /var/lib/apt/lists/*
+
 # Run as non-root user for better security
 RUN useradd -m appuser
 USER appuser
 
-# Use Gunicorn for production
-CMD ["gunicorn", "--bind", "0.0.0.0:5000", "app:app"]
+# Use Gunicorn for production with increased timeout
+CMD ["gunicorn", "--bind", "0.0.0.0:5000", "--timeout", "120", "--workers", "1", "app:app"]
