@@ -1,0 +1,36 @@
+---
+- name: Clean up Hello World Counter Application
+  hosts: raspberrypi1
+  become: true
+  vars:
+    app_dir: /opt/hello-counter
+  
+  tasks:
+    - name: Stop and remove containers, networks, and volumes
+      community.docker.docker_compose_v2:
+        project_src: "{{ app_dir }}"
+        state: absent
+        remove_volumes: true
+        remove_orphans: true
+      ignore_errors: yes
+    
+    - name: Remove Docker images
+      command: docker rmi hello-counter-web --force
+      ignore_errors: yes
+    
+    - name: Remove application directory
+      file:
+        path: "{{ app_dir }}"
+        state: absent
+    
+    - name: Remove any dangling volumes
+      command: docker volume prune -f
+      ignore_errors: yes
+    
+    - name: Remove any unused networks
+      command: docker network prune -f
+      ignore_errors: yes
+    
+    - name: Cleanup complete
+      debug:
+        msg: "The Hello World Counter application has been completely removed from the system."
