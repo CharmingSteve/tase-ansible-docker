@@ -3,20 +3,21 @@ FROM python:3.9-slim AS builder
 
 WORKDIR /app
 
-# Install build dependencies
+# Copy requirements and pin specific versions
 COPY app/requirements.txt .
-RUN pip install --no-cache-dir --user -r requirements.txt
+# Modify requirements to use compatible versions
+RUN echo "flask==2.0.1\nwerkzeug==2.0.2\nredis==4.0.2\ngunicorn==20.1.0" > requirements.txt
+RUN pip install --no-cache-dir -r requirements.txt
 
 # Runtime stage
 FROM python:3.9-slim
 
 WORKDIR /app
 
-# Copy only the installed packages from the builder stage
-COPY --from=builder /root/.local /usr/local
-
-# Make sure scripts are usable
-ENV PATH=/usr/local/bin:$PATH
+# Copy Python packages including modules
+COPY --from=builder /usr/local/lib/python3.9/site-packages /usr/local/lib/python3.9/site-packages
+COPY --from=builder /usr/local/bin/gunicorn /usr/local/bin/gunicorn
+COPY --from=builder /usr/local/bin/flask /usr/local/bin/flask
 
 # Copy application code
 COPY app/ .
