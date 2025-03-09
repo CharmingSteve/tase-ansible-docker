@@ -89,3 +89,25 @@
       debug:
         var: container_logs.stdout_lines
       when: container_logs is defined and container_logs.stdout_lines is defined
+    - name: Wait for web application to be accessible on port 8080
+      uri:
+        url: "http://localhost:8080"
+        return_content: yes
+      register: web_response
+      retries: 5
+      delay: 10
+      until: web_response.status == 200
+      ignore_errors: no
+      
+    - name: Fail if web application is not responding
+      fail:
+        msg: "Web application is not accessible on port 8080"
+      when: web_response.status is not defined or web_response.status != 200
+      
+    - name: Verify content of web application response
+      fail:
+        msg: "Web application response does not contain expected content"
+      when: "'Hello World' not in web_response.content"
+
+
+
