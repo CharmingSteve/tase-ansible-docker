@@ -1,6 +1,6 @@
 ---
 - name: Deploy Web Application with Redis Counter
-  hosts: raspberry_pi    # This should match your host group in /etc/ansible/hosts
+  hosts: raspberrypi1
   become: true
   vars:
     app_dir: /opt/hello-counter
@@ -13,18 +13,42 @@
         state: directory
         mode: '0755'
     
-    # Copy application files
-    - name: Copy application files
-      synchronize:
-        src: ./
-        dest: "{{ app_dir }}/"
-        rsync_opts:
-          - "--exclude=.git"
+    # Alternative approach to copy files without using synchronize
+    - name: Create a tarball of the application
       delegate_to: localhost
+      become: false  # Don't use sudo on localhost
+      command: tar -czf /tmp/app_deploy.tar.gz --exclude='.git' .
+      args:
+        chdir: "{{ playbook_dir }}"
+      changed_when: true
     
-    # Deploy application
-    - name: Deploy with docker-compose
-      docker_compose:
+    - name: Copy tarball to remote host
+      copy:
+        src: /tmp/app_deploy.tar.gz
+        dest: /tmp/app_deploy.tar.gz
+    
+    - name: Extract tarball to application directory
+      unarchive:
+        src: /tmp/app_deploy.tar.gz
+        dest: "{{ app_dir }}"
+        remote_src: yes
+    
+    - name: Clean up local tarball
+      delegate_to: localhost
+      become: false  # Don't use sudo on localhost
+      file:
+        path: /tmp/app_deploy.tar.gz
+        state: absent
+      changed_when: false
+    
+    - name: Clean up remote tarball
+      file:
+        path: /tmp/app_deploy.tar.gz
+        state: absent
+      changed_when: false
+    
+    # Deploy application using docker-compose v2
+    - name: Deploy with docker-compose v2
+      community.docker.docker_compose_v2:
         project_src: "{{ app_dir }}"
         state: present
-
